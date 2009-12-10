@@ -125,6 +125,50 @@ HTML
 HAML
   end
 
+  def test_haml_tag_name_attribute_with_id
+    assert_equal("<p id='some_id'>#{'a'}</p>\n", render("- haml_tag 'p#some_id', 'a'"))
+  end
+
+  def test_haml_tag_without_name_but_with_id
+    assert_equal("<div id='some_id'>#{'a'}</div>\n", render("- haml_tag '#some_id', 'a'"))
+  end
+
+  def test_haml_tag_without_name_but_with_class
+    assert_equal("<div class='foo'>#{'a'}</div>\n", render("- haml_tag '.foo', 'a'"))
+  end
+
+  def test_haml_tag_name_with_id_and_class
+    assert_equal("<p class='foo' id='some_id'>#{'a'}</p>\n", render("- haml_tag 'p#some_id.foo', 'a'"))
+  end
+
+  def test_haml_tag_name_with_class
+    assert_equal("<p class='foo'>#{'a'}</p>\n", render("- haml_tag 'p.foo', 'a'"))
+  end
+
+  def test_haml_tag_name_with_class_and_id
+    assert_equal("<p class='foo' id='some_id'>#{'a'}</p>\n", render("- haml_tag 'p.foo#some_id', 'a'"))
+  end
+
+  def test_haml_tag_name_with_id_and_multiple_classes
+    assert_equal("<p class='foo bar' id='some_id'>#{'a'}</p>\n", render("- haml_tag 'p#some_id.foo.bar', 'a'"))
+  end
+
+  def test_haml_tag_name_with_multiple_classes_and_id
+    assert_equal("<p class='foo bar' id='some_id'>#{'a'}</p>\n", render("- haml_tag 'p.foo.bar#some_id', 'a'"))
+  end
+
+  def test_haml_tag_name_and_attribute_classes_merging
+    assert_equal("<p class='foo bar' id='some_id'>#{'a'}</p>\n", render("- haml_tag 'p#some_id.foo', 'a', :class => 'bar'"))
+  end
+
+  def test_haml_tag_name_and_attribute_classes_merging
+    assert_equal("<p class='foo bar'>#{'a'}</p>\n", render("- haml_tag 'p.foo', 'a', :class => 'bar'"))
+  end
+
+  def test_haml_tag_name_id_and_attribute_id_raises_exception_if_different
+    assert_raise(Haml::Error) { render("- haml_tag 'p#foo', 'foo', :id => 'bar'") }
+  end
+
   def test_haml_tag_attribute_html_escaping
     assert_equal("<p id='foo&amp;bar'>baz</p>\n", render("%p{:id => 'foo&bar'} baz", :escape_html => true))
   end

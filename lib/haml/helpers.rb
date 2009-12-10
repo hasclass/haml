@@ -365,7 +365,9 @@ END
     # Creates an HTML tag with the given name and optionally text and attributes.
     # Can take a block that will run between the opening and closing tags.
     # If the block is a Haml block or outputs text using \{#haml\_concat},
-    # the text will be properly indented.
+    # the text will be properly indented. The name can contain id and class
+    # attributes like in HAML templates. ie: "span#foo.bar" or "#foo".
+    #
     #
     # `flags` is a list of symbol flags
     # like those that can be put at the end of a Haml tag
@@ -417,13 +419,14 @@ END
     def haml_tag(name, *rest, &block)
       ret = ErrorReturn.new("haml_tag")
 
-      name = name.to_s
       text = rest.shift.to_s unless [Symbol, Hash, NilClass].any? {|t| rest.first.is_a? t}
       flags = []
       flags << rest.shift while rest.first.is_a? Symbol
+      name, attrs = merge_name_and_attributes(name.to_s, rest.shift || {})
+
       attributes = Haml::Precompiler.build_attributes(haml_buffer.html?,
                                                       haml_buffer.options[:attr_wrapper],
-                                                      rest.shift || {})
+                                                      attrs)
 
       if text.nil? && block.nil? && (haml_buffer.options[:autoclose].include?(name) || flags.include?(:/))
         haml_concat "<#{name}#{attributes} />"
@@ -511,6 +514,47 @@ END
     end
 
     private
+
+    # Parses the name string for id and classes and merges it the attributes hash.
+    # merge_name_and_attributes("div#foo.bar", :class => 'abc')
+    # => 'div', {:class => 'abc bar', :id => 'foo'}
+    #
+    # @param name [String] The haml_tag name string
+    # @param attributes [Hash] The haml_tag attributes Hash
+    # @return [String, Hash] name, attributes
+    def merge_name_and_attributes(name, attributes = {})
+      # skip merging if no ids or classes found in name
+      return name, attributes if name[/[\.#]/].nil?
+
+      tag,id,class_names = tag_id_class_from_name(name)
+
+      if attributes[:id] and id != attributes[:id].to_s
+        raise Error.new("ID differs from name and options. #{id} != #{attributes[:id]}")
+      end
+
+      attributes[:id] ||= id
+      class_name = [class_names, attributes[:class]].join(" ").strip
+      attributes[:class] = class_name.present? ? class_name : nil
+
+      return tag, attributes
+    end
+
+    # Extracts the tag-name, id, and classes from a haml_tag name string.
+    # div.foo#bar => 'div', 'bar', 'foo'
+    # div.foo.bar => 'div', nil, 'foo bar'
+    #
+    # @param name [String] The haml_tag name string
+    # @return [String, String, String] tag-name, id, classes
+    def tag_id_class_from_name(name)
+      tag = name[/^([\w:\-_]*)[#\.]?/,1] # everything before a "#"
+      tag = 'div' if tag.blank?
+      id = name[/#([\w\-_]*)\.?/,1] # everything after a "#" and an (optional) "."
+      classes = name[/\.([\w\-\._]*)#?/, 1] # everything after a "." and before a "#"
+      classes.gsub!('.', ' ') if classes
+
+      return tag, id, classes
+    end
+
 
     # Runs a block of code with the given buffer as the currently active buffer.
     #

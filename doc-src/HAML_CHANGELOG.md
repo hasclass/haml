@@ -5,6 +5,19 @@
 
 ## 2.4.0 (Unreleased)
 
+### haml_tag improvement
+
+haml_tag now accepts as a string with tag, id and classes. The classes of the name string
+and the :class attributes are merged.
+
+haml_tag('span#foo.bar')
+=> <span class='bar' id='foo' />
+haml_tag('span#foo.bar', :class => 'abc')
+=> <span class='abc bar' id='foo' />
+haml_tag('#foo')
+=> <div id='foo' />
+
+
 ### Object Reference Customization
 
 It's now possible to customize the name used for {file:HAML_REFERENCE.md#object_reference_ object reference}
