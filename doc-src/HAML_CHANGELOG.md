@@ -17,6 +17,8 @@ haml_tag('span#foo.bar', :class => 'abc')
 haml_tag('#foo')
 => <div id='foo' />
 
+Cheers, S. Burkhard
+
 
 ### Object Reference Customization
 
