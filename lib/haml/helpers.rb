@@ -515,7 +515,7 @@ END
 
     private
 
-    # Parses the name string for id and classes and merges it the attributes hash.
+    # Parses the name for id and classes and merges it the attributes hash.
     # merge_name_and_attributes("div#foo.bar", :class => 'abc')
     # => 'div', {:class => 'abc bar', :id => 'foo'}
     #
@@ -526,35 +526,14 @@ END
       # skip merging if no ids or classes found in name
       return name, attributes if name[/[\.#]/].nil?
 
-      tag,id,class_names = tag_id_class_from_name(name)
+      tag = name[/^([\w:\-_]+)[#\.]?/,1] || 'div'
 
-      if attributes[:id] and id != attributes[:id].to_s
-        raise Error.new("ID differs from name and options. #{id} != #{attributes[:id]}")
-      end
-
-      attributes[:id] ||= id
-      class_name = [class_names, attributes[:class]].join(" ").strip
-      attributes[:class] = class_name.present? ? class_name : nil
+      attributes_from_name = Precompiler.parse_class_and_id(name)
+      attributes_stringified = HashWithIndifferentAccess.new(attributes)
+      attributes = Buffer.merge_attrs(attributes_from_name, attributes_stringified)
 
       return tag, attributes
     end
-
-    # Extracts the tag-name, id, and classes from a haml_tag name string.
-    # div.foo#bar => 'div', 'bar', 'foo'
-    # div.foo.bar => 'div', nil, 'foo bar'
-    #
-    # @param name [String] The haml_tag name string
-    # @return [String, String, String] tag-name, id, classes
-    def tag_id_class_from_name(name)
-      tag = name[/^([\w:\-_]*)[#\.]?/,1] # everything before a "#"
-      tag = 'div' if tag.blank?
-      id = name[/#([\w\-_]*)\.?/,1] # everything after a "#" and an (optional) "."
-      classes = name[/\.([\w\-\._]*)#?/, 1] # everything after a "." and before a "#"
-      classes.gsub!('.', ' ') if classes
-
-      return tag, id, classes
-    end
-
 
     # Runs a block of code with the given buffer as the currently active buffer.
     #
