@@ -529,7 +529,8 @@ END
       tag = name[/^([\w:\-_]+)[#\.]?/,1] || 'div'
 
       attributes_from_name = Precompiler.parse_class_and_id(name)
-      attributes_stringified = HashWithIndifferentAccess.new(attributes)
+      attributes_stringified = Haml::Util.map_keys(attributes) {|key| key.to_s }
+      
       attributes = Buffer.merge_attrs(attributes_from_name, attributes_stringified)
 
       return tag, attributes
